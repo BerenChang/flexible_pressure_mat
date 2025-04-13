@@ -32,7 +32,7 @@
         // resizeCanvas(); // initial resize
 
         const avgPointTrace = [];
-        const traceDuration = 2000; // 2 seconds in milliseconds
+        const traceDuration = 1000; // 2 seconds in milliseconds
 
         // function drawMarkerTrace(trace) {
         //     const canvas = document.getElementById('markerCanvas');
@@ -66,50 +66,49 @@
             if (trace.length < 2) return;
 
             const now = Date.now();
+            const alphaStart = 1;
 
-            // Draw the fading bezier trace
+            // --- Smooth connected quadratic Bézier path ---
+            ctx.beginPath();
             ctx.lineWidth = 2;
             ctx.lineJoin = 'round';
 
-            for (let i = 0; i < trace.length - 2; i++) {
+            ctx.moveTo(trace[0].x, trace[0].y);
+
+            for (let i = 1; i < trace.length - 1; i++) {
                 const p0 = trace[i];
                 const p1 = trace[i + 1];
-                const p2 = trace[i + 2];
 
-                const age = now - p0.timestamp;
-                const alpha = 1 - (age / traceDuration);
-                ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
-
-                ctx.beginPath();
-                ctx.moveTo(p0.x, p0.y);
+                // Midpoint for smoother transitions
                 const cpX = (p0.x + p1.x) / 2;
                 const cpY = (p0.y + p1.y) / 2;
-                ctx.quadraticCurveTo(p1.x, p1.y, cpX, cpY);
-                ctx.stroke();
+
+                ctx.quadraticCurveTo(p0.x, p0.y, cpX, cpY);
             }
 
-            // Optional: connect the last two points with a straight line if trace ends there
-            if (trace.length >= 2) {
-                const lastAge = now - trace[trace.length - 2].timestamp;
-                const alpha = 1 - (lastAge / traceDuration);
-                ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
-                ctx.beginPath();
-                ctx.moveTo(trace[trace.length - 2].x, trace[trace.length - 2].y);
-                ctx.lineTo(trace[trace.length - 1].x, trace[trace.length - 1].y);
-                ctx.stroke();
-            }
+            // Final segment: connect last two points
+            const last = trace[trace.length - 1];
+            const secondLast = trace[trace.length - 2];
+            ctx.lineTo(last.x, last.y);
 
-            // Draw final red cross at latest point
-            const latest = trace[trace.length - 1];
+            // Fade by oldest point's age
+            const oldestAge = now - trace[0].timestamp;
+            const alpha = 1 - (oldestAge / traceDuration);
+            ctx.strokeStyle = `rgba(0, 0, 0, ${Math.max(0.3, alpha)})`;
+
+            ctx.stroke();
+
+            // --- Red cross at the latest point ---
             ctx.strokeStyle = 'black';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.moveTo(latest.x - 6, latest.y - 6);
-            ctx.lineTo(latest.x + 6, latest.y + 6);
-            ctx.moveTo(latest.x + 6, latest.y - 6);
-            ctx.lineTo(latest.x - 6, latest.y + 6);
+            ctx.moveTo(last.x - 6, last.y - 6);
+            ctx.lineTo(last.x + 6, last.y + 6);
+            ctx.moveTo(last.x + 6, last.y - 6);
+            ctx.lineTo(last.x - 6, last.y + 6);
             ctx.stroke();
         }
+
 
 
 
