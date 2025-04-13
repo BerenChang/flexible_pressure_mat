@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Data Clustering</title>
+    <style>
+        body, html { margin:0; padding:0; }
+        #heatmapContainerWrapper { width:800px; height:500px; margin:auto; background:rgba(0,0,0,.1); }
+        #heatmapContainer { width:100%; height:100%;}
+      </style>
+    <script src="{{ url_for('static', filename='js/heatmap.js') }}"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script> -->
+</head>
+<body>
+    <h1>Heatmap Visualization</h1>
+    <div id="heatmapContainerWrapper">  
+        <div id="heatmapContainer">
+  
+        </div>
+      </div>
+    
+    <script>
+        async function fetchData() {
+            const response = await fetch('/data');
+            const data = await response.json();
+            var points = [];
+
+            for (i = 0; i < data.length; i++) { 
+                var point = {
+                    x: 10*data[i][0],
+                    y: 10*data[i][1],
+                    value: data[i][2],
+                    radius: 30
+                };
+                points.push(point);
+            }
+            // console.log(points);
+            return points;
+        }
+
+
+        var heatmapInstance = h337.create({
+            container: document.getElementById('heatmapContainer')
+        });
+
+        async function plotData() {
+            const points = await fetchData();  // Fetch new data from the server
+
+            heatmapInstance.setData({
+                max: 100,
+                data: points
+            });
+        }
+
+        setInterval(plotData, 10);
+    </script>
+</body>
+</html>

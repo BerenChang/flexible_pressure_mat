@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Means Clustering</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <h1>K-Means Clustering Visualization</h1>
+    <canvas id="scatterChart"  width="10" height="10"></canvas>
+    <script src="{{ url_for('static', filename='js/kmeans.js') }}"></script>
+    <script>
+        async function fetchData() {
+            const response = await fetch('/data');
+            const data = await response.json();
+            return data;
+        }
+
+        let chartInstance = null;  // Store chart instance globally
+
+        async function plotData() {
+            const rawData = await fetchData();  // Fetch new data from the server
+
+            // Perform KMeans clustering with 3 clusters
+            const { centroids, clusters } = kmeans(rawData, 2);
+
+            const ctx = document.getElementById('scatterChart').getContext('2d');
+
+            // Prepare the dataset for clusters
+            const clusterData = [...Array(2)].map((_, i) => ({
+                label: `Cluster ${i + 1}`,
+                data: rawData.filter((_, index) => clusters[index] === i)
+                            .map(point => ({x: point[0], y: point[1]})),
+                backgroundColor: `hsl(${i * 120}, 70%, 50%)`,
+                pointRadius: 5  // Cluster points are small circles
+            }));
+
+            // Prepare the dataset for centroids
+            const centroidData = centroids.map((point, index) => ({
+                x: point[0],
+                y: point[1],
+                radius: 8,  // Larger radius for centroids
+                backgroundColor: `hsl(${index * 120}, 70%, 50%)`,  // Same color as cluster points
+                label: `Centroid ${index + 1}`
+            }));
+
+            // Combine cluster data and centroid data into one dataset array
+            const allData = clusterData.concat([{
+                label: 'Centroids',
+                data: centroidData,
+                backgroundColor: centroidData.map(point => point.backgroundColor),
+                pointRadius: centroidData.map(point => point.radius),
+                pointStyle: 'circle'  // Mark centroids with a circle
+            }]);
+
+            // If the chart already exists, update it; otherwise, create a new one
+            if (chartInstance) {
+                // Update the data of the existing chart
+                chartInstance.data.datasets = allData;
+                chartInstance.update();  // Redraw the chart with the new data
+            } else {
+                // Create a new chart if it doesn't exist
+                chartInstance = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: allData
+                    },
+                    options: {
+                        animation: {
+                            duration: 0, // Disable animation by setting duration to 0
+                            easing: 'easeInOutQuad', // Use an easing function for smooth movement
+                        },
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                ticks: {
+                                    beginAtZero: false
+                                }
+                            },
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                ticks: {
+                                    beginAtZero: false
+                                }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    title: (tooltipItem) => {
+                                        const idx = tooltipItem[0].datasetIndex;
+                                        return tooltipItem[0].element.label || `Cluster ${idx + 1}`;
+                                    },
+                                    label: (tooltipItem) => {
+                                        const {x, y} = tooltipItem.raw;
+                                        return `(${x.toFixed(2)}, ${y.toFixed(2)})`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        
+        setInterval(plotData, 50);
+    </script>
+</body>
+</html>
