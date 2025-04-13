@@ -146,14 +146,15 @@ threading.Thread(target=read_serial, daemon=True).start()
 @app.route('/data')
 def data():
     global data_buffer
-    print(data_buffer)
+    # print(data_buffer)
     
     return jsonify(data_buffer) 
 
 @app.route('/')
 def index():
-    return render_template('index_heatmap.html')
+    # return render_template('index_heatmap.html')
+    return render_template('index_heatmap_ave.html')
 
 if __name__ == '__main__':
-    # app.run(host='127.0.0.1', port=5000, debug=False)
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='127.0.0.1', port=5000, debug=False)
+    # app.run(host='0.0.0.0', port=5000, debug=False)

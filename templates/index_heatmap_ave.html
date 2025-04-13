@@ -31,6 +31,32 @@
         // window.addEventListener('resize', resizeCanvas);
         // resizeCanvas(); // initial resize
 
+        const avgPointTrace = [];
+        const traceDuration = 2000; // 2 seconds in milliseconds
+
+        function drawMarkerTrace(trace) {
+            const canvas = document.getElementById('markerCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const now = Date.now();
+
+            for (let i = 0; i < trace.length; i++) {
+                const pt = trace[i];
+                const age = now - pt.timestamp;
+                const alpha = 1 - (age / traceDuration); // 1 → 0 as time passes
+
+                ctx.beginPath();
+                ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.moveTo(pt.x - 6, pt.y - 6);
+                ctx.lineTo(pt.x + 6, pt.y + 6);
+                ctx.moveTo(pt.x + 6, pt.y - 6);
+                ctx.lineTo(pt.x - 6, pt.y + 6);
+                ctx.stroke();
+            }
+        }
+
 
         function drawMarker(x, y) {
             const canvas = document.getElementById('markerCanvas');
@@ -69,7 +95,7 @@
                     x: x,
                     y: y,
                     value: value,
-                    radius: 40
+                    radius: 30
                 };
                 heatmapPoints.push(point);
 
@@ -96,16 +122,28 @@
             const { heatmapPoints, avgPoint } = await fetchData();  // Fetch new data from the server
 
             heatmapInstance.setData({
-                max: 400,
+                max: 100,
                 data: heatmapPoints
             });
 
+            const now = Date.now();
+
+            // Update trace
             if (avgPoint) {
-                drawMarker(avgPoint.x, avgPoint.y);
+                //     drawMarker(avgPoint.x, avgPoint.y);
+                avgPointTrace.push({ ...avgPoint, timestamp: now });
             }
+
+            // Remove old trace points
+            while (avgPointTrace.length > 0 && (now - avgPointTrace[0].timestamp) > traceDuration) {
+                avgPointTrace.shift();
+            }
+
+            drawMarkerTrace(avgPointTrace);
+
         }
 
-        setInterval(plotData, 10);
+        setInterval(plotData, 33);
     </script>
 </body>
 </html>
