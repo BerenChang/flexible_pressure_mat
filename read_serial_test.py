@@ -92,7 +92,8 @@ def read_serial():
 
         # process the collected data
         # data_array = mat_list_to_array(flat_mat)
-        subarray = mat_list_to_array_subsize(flat_mat, 10, 10)
+        subarray = mat_list_to_array_subsize(flat_mat, 28, 28)
+        print("-------------------------------------------")
         print(subarray)
         # if (print_count>10):
         #     prettyprint_mat(flat_mat)
@@ -123,7 +124,7 @@ def read_serial_once():
 
     # process the collected data
     # data_array = mat_list_to_array(flat_mat)
-    subarray = mat_list_to_array_subsize(flat_mat, 9, 9)
+    subarray = mat_list_to_array_subsize(flat_mat, 20, 20)
     print(subarray)
 
 

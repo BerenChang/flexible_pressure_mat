@@ -17,7 +17,7 @@
     <h1 class="center-text">Golf Data Heatmap Visualization</h1>
     <div id="heatmapContainerWrapper">  
         <div id="heatmapContainer" style="position: relative;">
-          <canvas id="markerCanvas" style="position: relative;" width="800", height="500"></canvas>
+          <canvas id="markerCanvas" style="position: absolute; top: 0; left: 0;"></canvas>
         </div>
       </div>
     
@@ -110,6 +110,8 @@
         }
 
 
+
+
         function drawMarker(x, y) {
             const canvas = document.getElementById('markerCanvas');
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
@@ -137,9 +139,8 @@
             let weightedSumX = 0;
             let weightedSumY = 0;
             let totalWeight = 0;
-            // let scale = 50;
-            let scale = 20;
-            let radius = 50;
+            let scale = 10;
+            let radius = 30;
             // scale10 radius30
             // scale50 radius100
 
@@ -179,7 +180,7 @@
             const { heatmapPoints, avgPoint } = await fetchData();  // Fetch new data from the server
 
             heatmapInstance.setData({
-                max: 80,
+                max: 100,
                 data: heatmapPoints
             });
 

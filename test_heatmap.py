@@ -68,6 +68,18 @@ def get_sparse(matrix: np.array):
 #         time.sleep(0.05)
 
 
+# def mat_list_to_array_subsize(mat_as_list: list, width: int, height: int):
+#     """
+#     Converts a 1d python list (presumably the mat) to a 2D numpy array
+#     """
+
+#     array = np.empty((width, height), dtype=np.uint8)
+    
+#     for i in range(width):
+#         array[i, :] = mat_as_list[i*ROW_WIDTH : i*ROW_WIDTH+height]
+
+#     return array
+
 def mat_list_to_array_subsize(mat_as_list: list, width: int, height: int):
     """
     Converts a 1d python list (presumably the mat) to a 2D numpy array
@@ -75,8 +87,8 @@ def mat_list_to_array_subsize(mat_as_list: list, width: int, height: int):
 
     array = np.empty((width, height), dtype=np.uint8)
     
-    for i in range(height):
-        array[i, :] = mat_as_list[i*ROW_WIDTH : i*ROW_WIDTH+width]
+    for i in range(width):
+        array[i, :] = mat_as_list[i*ROW_WIDTH : i*ROW_WIDTH+height]
 
     return array
 
@@ -127,12 +139,13 @@ def read_serial():
 
         # process the collected data
         # data_array = mat_list_to_array(flat_mat)
-        subarray = mat_list_to_array_subsize(flat_mat, 9, 9)
-        for i in range(9):
-            for j in range(9):
-                subarray[i][j] -= min(subarray[i][j], 30)
+        # print(len(flat_mat))
+        subarray = mat_list_to_array_subsize(flat_mat, 56, 28)
+        # for i in range(9):
+        #     for j in range(9):
+        #         subarray[i][j] -= min(subarray[i][j], 5)
         X = get_sparse(subarray)
-        # print(subarray)
+        # print(subarray[:,0])
         data_buffer = X.tolist()
         # print(data_buffer)
         # time.sleep(0.05)
@@ -154,6 +167,7 @@ def data():
 def index():
     # return render_template('index_heatmap.html')
     return render_template('index_heatmap_ave.html')
+    # return render_template('index_heatmap_ave2.html')
 
 if __name__ == '__main__':
     app.run(host='127.0.0.1', port=5000, debug=False)
