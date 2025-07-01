@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Data Heatmap Visualization</title>
+    <style>
+        .center-text { text-align: center; }
+        body, html { margin:0; padding:0; }
+        #heatmapContainerWrapper { width:800px; height:500px; margin:auto; background:rgba(0,0,0,.1); }
+        #heatmapContainer { width:100%; height:100%;}
+      </style>
+    <script src="{{ url_for('static', filename='js/heatmap.js') }}"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script> -->
+</head>
+<body>
+    <h1 class="center-text">Golf Data Heatmap Visualization</h1>
+    <div id="heatmapContainerWrapper">  
+        <div id="heatmapContainer" style="position: relative;">
+          <canvas id="markerCanvas" style="position: relative;" width="800", height="500"></canvas>
+        </div>
+      </div>
+    
+    <script>
+        // function resizeCanvas() {
+        //     const canvas = document.getElementById('markerCanvas');
+        //     const container = document.getElementById('heatmapContainer');
+        //     canvas.width = container.clientWidth;
+        //     canvas.height = container.clientHeight;
+        // }
+        // window.addEventListener('resize', resizeCanvas);
+        // resizeCanvas(); // initial resize
+
+        const avgPointTrace = [];
+        const traceDuration = 1000; // 2 seconds in milliseconds
+
+        // function drawMarkerTrace(trace) {
+        //     const canvas = document.getElementById('markerCanvas');
+        //     const ctx = canvas.getContext('2d');
+        //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        //     const now = Date.now();
+
+        //     for (let i = 0; i < trace.length; i++) {
+        //         const pt = trace[i];
+        //         const age = now - pt.timestamp;
+        //         const alpha = 1 - (age / traceDuration); // 1 → 0 as time passes
+
+        //         ctx.beginPath();
+        //         ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+        //         ctx.lineWidth = 2;
+        //         ctx.moveTo(pt.x - 6, pt.y - 6);
+        //         ctx.lineTo(pt.x + 6, pt.y + 6);
+        //         ctx.moveTo(pt.x + 6, pt.y - 6);
+        //         ctx.lineTo(pt.x - 6, pt.y + 6);
+        //         ctx.stroke();
+        //     }
+        // }
+
+
+        function drawMarkerTrace(trace) {
+            const canvas = document.getElementById('markerCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (trace.length < 2) return;
+
+            const now = Date.now();
+            const alphaStart = 1;
+
+            // --- Smooth connected quadratic Bézier path ---
+            ctx.beginPath();
+            ctx.lineWidth = 2;
+            ctx.lineJoin = 'round';
+
+            ctx.moveTo(trace[0].x, trace[0].y);
+
+            for (let i = 1; i < trace.length - 1; i++) {
+                const p0 = trace[i];
+                const p1 = trace[i + 1];
+
+                // Midpoint for smoother transitions
+                const cpX = (p0.x + p1.x) / 2;
+                const cpY = (p0.y + p1.y) / 2;
+
+                ctx.quadraticCurveTo(p0.x, p0.y, cpX, cpY);
+            }
+
+            // Final segment: connect last two points
+            const last = trace[trace.length - 1];
+            const secondLast = trace[trace.length - 2];
+            ctx.lineTo(last.x, last.y);
+
+            // Fade by oldest point's age
+            const oldestAge = now - trace[0].timestamp;
+            const alpha = 1 - (oldestAge / traceDuration);
+            ctx.strokeStyle = `rgba(0, 0, 0, ${Math.max(0.3, alpha)})`;
+
+            ctx.stroke();
+
+            // --- Red cross at the latest point ---
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(last.x - 6, last.y - 6);
+            ctx.lineTo(last.x + 6, last.y + 6);
+            ctx.moveTo(last.x + 6, last.y - 6);
+            ctx.lineTo(last.x - 6, last.y + 6);
+            ctx.stroke();
+        }
+
+
+        function drawMarker(x, y) {
+            const canvas = document.getElementById('markerCanvas');
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+            // Clear old marker
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw a red cross marker
+            ctx.beginPath();
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.moveTo(x - 6, y - 6);
+            ctx.lineTo(x + 6, y + 6);
+            ctx.moveTo(x + 6, y - 6);
+            ctx.lineTo(x - 6, y + 6);
+            ctx.stroke();
+        }
+
+
+        async function fetchData() {
+            const response = await fetch('/data');
+            const data = await response.json();
+            var heatmapPoints = [];
+
+            let weightedSumX = 0;
+            let weightedSumY = 0;
+            let totalWeight = 0;
+            // let scale = 50;
+            let scale = 20;
+            let radius = 50;
+            // scale10 radius30
+            // scale50 radius100
+
+            for (i = 0; i < data.length; i++) { 
+                const x = scale * data[i][0];
+                const y = scale * data[i][1];
+                const value = data[i][2];
+
+                var point = {
+                    x: x,
+                    y: y,
+                    value: value,
+                    radius: radius
+                };
+                heatmapPoints.push(point);
+
+                weightedSumX += scale * x * value;
+                weightedSumY += scale * y * value;
+                totalWeight += scale * value;
+            }
+
+            // Add weighted average as a special point
+            avgPoint = {
+                x: weightedSumX / totalWeight,
+                y: weightedSumY / totalWeight,
+            }
+            console.log(avgPoint);
+            return { heatmapPoints, avgPoint };
+        }
+
+
+        var heatmapInstance = h337.create({
+            container: document.getElementById('heatmapContainer')
+        });
+
+        async function plotData() {
+            const { heatmapPoints, avgPoint } = await fetchData();  // Fetch new data from the server
+
+            heatmapInstance.setData({
+                max: 80,
+                data: heatmapPoints
+            });
+
+            // console.debug(heatmapPoints);
+
+            const now = Date.now();
+
+            // Update trace
+            if (avgPoint) {
+                //     drawMarker(avgPoint.x, avgPoint.y);
+                avgPointTrace.push({ ...avgPoint, timestamp: now });
+            }
+
+            // Remove old trace points
+            while (avgPointTrace.length > 0 && (now - avgPointTrace[0].timestamp) > traceDuration) {
+                avgPointTrace.shift();
+            }
+
+            drawMarkerTrace(avgPointTrace);
+
+        }
+
+        setInterval(plotData, 33);
+    </script>
+</body>
+</html>
